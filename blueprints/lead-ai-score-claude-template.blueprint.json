@@ -1,0 +1,131 @@
+{
+  "name": "Lead AI score (Claude template)",
+  "flow": [
+    {
+      "id": 1,
+      "module": "gateway:CustomWebHook",
+      "version": 1,
+      "parameters": {
+        "hook": 4166441,
+        "maxResults": 1
+      },
+      "mapper": {},
+      "metadata": {
+        "designer": {
+          "x": 300,
+          "y": 0
+        }
+      }
+    },
+    {
+      "id": 2,
+      "module": "airtable:ActionGetRecord",
+      "version": 3,
+      "parameters": {
+        "__IMTCONN__": 13336435
+      },
+      "mapper": {
+        "base": "app1OI1LVdbGwYVkr",
+        "table": "tblkaSZFXjydS0iue",
+        "useColumnId": false,
+        "id": "{{1.recordId}}"
+      },
+      "metadata": {
+        "designer": {
+          "x": 600,
+          "y": 0
+        }
+      }
+    },
+    {
+      "id": 3,
+      "module": "anthropic-claude:createAMessage",
+      "version": 1,
+      "parameters": {
+        "__IMTCONN__": 13341258
+      },
+      "mapper": {
+        "model": "claude-haiku-5-5",
+        "max_tokens": 1000,
+        "temperature": 1,
+        "metadata": {},
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "You score sales leads for a B2B company. Read the lead below and return only a JSON object, with no other text and no code fences, in this exact form: {\"score\": <integer 1-100>, \"summary\": \"<one or two short sentences in Hebrew>\"}.\nA high score means a lead that is likely to close and is worth a lot: larger budget and value, strong interest, more email opens and site visits, a referral or event source, and a status further along the funnel.\n\nName: {{2.name}}\nCompany: {{2.company}}\nSource: {{2.source}}\nBudget: {{2.budget}}\nValue (ILS): {{2.value}}\nInterest: {{2.interest}}\nStatus: {{2.status}}\nEmail opens: {{2.emailOpens}}\nSite visits: {{2.siteVisits}}"
+              }
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "designer": {
+          "x": 900,
+          "y": 0
+        }
+      }
+    },
+    {
+      "id": 4,
+      "module": "json:ParseJSON",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "json": "{{3.rawResponse}}"
+      },
+      "metadata": {
+        "designer": {
+          "x": 1200,
+          "y": 0
+        }
+      }
+    },
+    {
+      "id": 5,
+      "module": "airtable:ActionUpdateRecords",
+      "version": 3,
+      "parameters": {
+        "__IMTCONN__": 13336435
+      },
+      "mapper": {
+        "base": "app1OI1LVdbGwYVkr",
+        "table": "tblkaSZFXjydS0iue",
+        "typecast": false,
+        "useColumnId": false,
+        "id": "{{2.id}}",
+        "record": {
+          "fldpNzKaRubABLitW": "{{4.score}}",
+          "fldAfo9b4wAJrwxlP": "{{4.summary}}"
+        }
+      },
+      "metadata": {
+        "designer": {
+          "x": 1500,
+          "y": 0
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "instant": true,
+    "version": 1,
+    "designer": {
+      "orphans": []
+    },
+    "scenario": {
+      "dlq": false,
+      "slots": null,
+      "dataloss": false,
+      "maxErrors": 3,
+      "autoCommit": true,
+      "roundtrips": 1,
+      "sequential": false,
+      "confidential": false,
+      "freshVariables": false,
+      "autoCommitTriggerLast": true
+    }
+  }
+}
