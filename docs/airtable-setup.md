@@ -32,6 +32,6 @@ IF(REGEX_MATCH({id}, '^L-[0-9]+$'), VALUE(SUBSTITUTE({id}, 'L-', '')), 0)
 
 ## החיבור מ-Make
 
-ב-Make נוצר חיבור Airtable מסוג OAuth בשם "ByteBlisk Airtable OAuth connection", עם גישה לשני הבסיסים. החיבור נוצר בהתחברות של בעל החשבון, ואין מפתח או טוקן בריפו.
+ב-Make יצרתי חיבור Airtable מסוג OAuth בשם "ByteBlisk Airtable OAuth connection", עם גישה לשני הבסיסים. יצרתי אותו בהתחברות שלי ל-Airtable, ולכן אין בריפו מפתח או טוקן.
 
 </div>
