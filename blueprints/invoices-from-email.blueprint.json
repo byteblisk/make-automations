@@ -1,0 +1,164 @@
+{
+  "name": "Invoices from email",
+  "flow": [
+    {
+      "id": 1,
+      "module": "gateway:CustomMailHook",
+      "version": 1,
+      "parameters": {
+        "hook": 4165819,
+        "maxResults": 1
+      },
+      "mapper": {},
+      "metadata": {
+        "designer": {
+          "x": 0,
+          "y": 0,
+          "name": "Forwarded email"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "module": "ai-tools:Categorize",
+      "version": 2,
+      "parameters": {
+        "model": "medium",
+        "makeConnectionId": 11947105
+      },
+      "mapper": {
+        "input": "Subject: {{1.subject}}\nFrom: {{1.from.name}} <{{1.from.address}}>\nAttachments: {{join(map(1.attachments; \"fileName\"); \", \")}}\n\nEmail text:\n{{substring(1.text; 0; 4000)}}",
+        "categories": [
+          {
+            " ": "invoice",
+            "description": "An invoice, tax invoice, receipt, or a request to pay for a product or service."
+          },
+          {
+            " ": "other",
+            "description": "Anything else: newsletter, advertising, personal message, order confirmation with no amount to pay."
+          }
+        ],
+        "forceSingleCategory": true,
+        "shouldGenerateDescription": true
+      },
+      "metadata": {
+        "designer": {
+          "x": 300,
+          "y": 0,
+          "name": "Invoice or not"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "module": "ai-tools:Extract",
+      "version": 2,
+      "parameters": {
+        "model": "medium",
+        "makeConnectionId": 11947105
+      },
+      "filter": {
+        "name": "Only invoices",
+        "conditions": [
+          [
+            {
+              "a": "{{join(2.categories; \",\")}}",
+              "b": "invoice",
+              "o": "text:contain:ci"
+            }
+          ]
+        ]
+      },
+      "mapper": {
+        "input": "Subject: {{1.subject}}\nFrom: {{1.from.name}} <{{1.from.address}}>\nAttachments: {{join(map(1.attachments; \"fileName\"); \", \")}}\n\nEmail text:\n{{substring(1.text; 0; 4000)}}",
+        "fields": [
+          {
+            "name": "vendor",
+            "type": "string",
+            "description": "Name of the business that issued the invoice. Empty if it is not stated."
+          },
+          {
+            "name": "invoiceNumber",
+            "type": "string",
+            "description": "Invoice or receipt number exactly as written. Empty if it is not stated."
+          },
+          {
+            "name": "invoiceDate",
+            "type": "string",
+            "description": "The date of the invoice, or the payment date of a receipt, converted to YYYY-MM-DD. Dates may be written in any form, for example 20/11/2026 (day first) or November 18, 2026. Empty only if no date of the invoice or payment appears."
+          },
+          {
+            "name": "amount",
+            "type": "number",
+            "description": "Total amount to pay including VAT, as a plain number without currency signs or commas. 0 if it is not stated."
+          },
+          {
+            "name": "currency",
+            "type": "string",
+            "description": "Currency code: ILS for shekels (₪, ש\"ח, NIS), USD for dollars, EUR for euros, other for any other currency. Empty if it is not stated."
+          },
+          {
+            "name": "summary",
+            "type": "string",
+            "description": "One short sentence in Hebrew saying what the invoice is for. Do not add details that are not in the email."
+          }
+        ]
+      },
+      "metadata": {
+        "designer": {
+          "x": 600,
+          "y": 0,
+          "name": "Invoice details"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "module": "airtable:ActionCreateRecord",
+      "version": 3,
+      "parameters": {
+        "__IMTCONN__": 13336435
+      },
+      "mapper": {
+        "base": "appBBtgsEEd383Qyk",
+        "table": "tblyxFOYChF4TUjVa",
+        "record": {
+          "fldA0P2KfiArDthQu": "{{1.from.address}}",
+          "fldGOBmWDkBsCOHEc": "{{3.information.invoiceNumber}}",
+          "fldQVU9G3qNlRFRB2": "{{1.subject}}",
+          "fldTJslYpwTRdYG7E": "{{3.information.invoiceDate}}",
+          "fldTvdg1CKPROVIF4": "{{3.information.vendor}}",
+          "fldZsDPGXQ876rI6U": "{{3.information.summary}}",
+          "fldgGVhvOfVN1H63O": "{{1.date}}",
+          "fldoQW5YNoSj8sdsZ": "new",
+          "fldouVdsn6ngrgORq": "{{switch(upper(trim(3.information.currency)); \"ILS\"; \"ILS\"; \"USD\"; \"USD\"; \"EUR\"; \"EUR\"; \"other\")}}",
+          "fldy1W0xWxY6kyYV8": "{{if(3.information.amount > 0; 3.information.amount; emptystring)}}"
+        },
+        "typecast": true,
+        "useColumnId": false
+      },
+      "metadata": {
+        "designer": {
+          "x": 900,
+          "y": 0,
+          "name": "Save invoice"
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "instant": true,
+    "version": 1,
+    "scenario": {
+      "dlq": false,
+      "dataloss": false,
+      "maxErrors": 3,
+      "autoCommit": true,
+      "roundtrips": 1,
+      "sequential": true,
+      "confidential": false,
+      "freshVariables": false,
+      "autoCommitTriggerLast": true
+    }
+  }
+}
