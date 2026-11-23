@@ -1,0 +1,175 @@
+{
+  "name": "Leads to dashboard",
+  "flow": [
+    {
+      "id": 1,
+      "module": "gateway:CustomWebHook",
+      "version": 1,
+      "parameters": {
+        "hook": 4165894,
+        "maxResults": 1
+      },
+      "mapper": {},
+      "metadata": {
+        "designer": {
+          "x": 0,
+          "y": 0,
+          "name": "New lead"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "module": "ai-tools:Extract",
+      "version": 2,
+      "parameters": {
+        "model": "medium",
+        "makeConnectionId": 11947105
+      },
+      "filter": {
+        "name": "Name is required",
+        "conditions": [
+          [
+            {
+              "a": "{{1.name}}",
+              "o": "exist"
+            }
+          ]
+        ]
+      },
+      "mapper": {
+        "input": "Name: {{1.name}}\nCompany: {{1.company}}\nMessage: {{1.message}}",
+        "fields": [
+          {
+            "name": "source",
+            "type": "string",
+            "description": "Where the lead came from. Exactly one of: website, google_ads, facebook, referral, linkedin, event, cold. Use website if it is not clear."
+          },
+          {
+            "name": "budget",
+            "type": "string",
+            "description": "Budget level by the amount in the message: small = up to 4,000 ILS, medium = 4,000 to 12,000 ILS, large = 12,000 to 30,000 ILS, enterprise = above 30,000 ILS. Use small if no amount is mentioned."
+          },
+          {
+            "name": "value",
+            "type": "number",
+            "description": "Estimated deal value in ILS, taken from the amount in the message, as a plain number. 0 if no amount is mentioned."
+          },
+          {
+            "name": "interest",
+            "type": "string",
+            "description": "What the lead is interested in, up to six words in Hebrew."
+          }
+        ]
+      },
+      "metadata": {
+        "designer": {
+          "x": 300,
+          "y": 0,
+          "name": "Sort the lead"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "module": "airtable:ActionSearchRecords",
+      "version": 3,
+      "parameters": {
+        "__IMTCONN__": 13336435
+      },
+      "mapper": {
+        "base": "app1OI1LVdbGwYVkr",
+        "sort": [
+          {
+            "field": "idNumber",
+            "direction": "desc"
+          }
+        ],
+        "table": "tblkaSZFXjydS0iue",
+        "maxRecords": 1,
+        "useColumnId": false
+      },
+      "metadata": {
+        "designer": {
+          "x": 600,
+          "y": 0,
+          "name": "Highest lead id"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "module": "airtable:ActionCreateRecord",
+      "version": 3,
+      "parameters": {
+        "__IMTCONN__": 13336435
+      },
+      "mapper": {
+        "base": "app1OI1LVdbGwYVkr",
+        "table": "tblkaSZFXjydS0iue",
+        "record": {
+          "fld7pKkilnDQBty9m": "{{1.name}}",
+          "fldDpWm41zY5X6HQ8": "{{get(split(\"אלה,יוסי,נתן,ספיר\"; \",\"); parseNumber(formatDate(now; \"m\")) % 4 + 1)}}",
+          "fldFyEvVxcXSRFCg4": "{{1.company}}",
+          "fldGBXTBiD0l0RK5e": "{{1.phone}}",
+          "fldOV76e2sX64mWig": "new",
+          "fldTwSj3BkY3j3U0Q": "{{2.information.interest}}",
+          "fldVgfqpxT1jBAugw": "{{round(ifempty(2.information.value; 0))}}",
+          "fldbGbVMJNCy5yCe2": "{{switch(lower(trim(2.information.budget)); \"small\"; \"small\"; \"medium\"; \"medium\"; \"large\"; \"large\"; \"enterprise\"; \"enterprise\"; \"small\")}}",
+          "fldbnCOrX5mn7IJj4": "0",
+          "fldfOE02fX7qyHp4H": "L-{{3.idNumber + 1}}",
+          "fldgRqwyLlrFnrLdZ": "{{switch(lower(trim(2.information.source)); \"website\"; \"website\"; \"google_ads\"; \"google_ads\"; \"facebook\"; \"facebook\"; \"referral\"; \"referral\"; \"linkedin\"; \"linkedin\"; \"event\"; \"event\"; \"cold\"; \"cold\"; \"website\")}}",
+          "fldvp4GlkOeCdrVRK": "{{now}}",
+          "fldwzwh31OQeWFSFx": "0"
+        },
+        "typecast": true,
+        "useColumnId": false
+      },
+      "metadata": {
+        "designer": {
+          "x": 900,
+          "y": 0,
+          "name": "Create lead"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "module": "gateway:WebhookRespond",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "body": "{\"ok\": true, \"id\": \"L-{{3.idNumber + 1}}\"}",
+        "status": 200,
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ]
+      },
+      "metadata": {
+        "designer": {
+          "x": 1200,
+          "y": 0,
+          "name": "Reply with the id"
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "instant": true,
+    "version": 1,
+    "scenario": {
+      "dlq": false,
+      "dataloss": false,
+      "maxErrors": 3,
+      "autoCommit": true,
+      "roundtrips": 1,
+      "sequential": false,
+      "confidential": false,
+      "freshVariables": false,
+      "autoCommitTriggerLast": true
+    }
+  }
+}
