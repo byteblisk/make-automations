@@ -1,0 +1,37 @@
+<div dir="rtl">
+
+# הכנת Airtable
+
+השלב הזה הוא סעיף 2 בסדר העבודה שב-[SPEC.md](../SPEC.md).
+
+## בסיס חדש: Invoices Inbox
+
+בסיס ייעודי לחשבוניות, כדי שהבסיס של הדשבורד יישאר נקי.
+
+| פרט | ערך |
+|---|---|
+| Base ID | `appBBtgsEEd383Qyk` |
+| טבלה | Invoices |
+| Table ID | `tblyxFOYChF4TUjVa` |
+
+השדות נוצרו בדיוק לפי הטבלה בסעיף "הטבלה ב-Airtable" באפיון.
+
+## שדה חדש בטבלת הלידים
+
+בבסיס Leads Dashboard, בטבלה Leads, נוסף שדה נוסחה בשם idNumber. השדה מחזיר את החלק המספרי של id, כדי שתרחיש הלידים ימצא את המספר הגבוה ביותר.
+
+</div>
+
+```text
+IF(REGEX_MATCH({id}, '^L-[0-9]+$'), VALUE(SUBSTITUTE({id}, 'L-', '')), 0)
+```
+
+<div dir="rtl">
+
+הדשבורד לא קורא את השדה הזה, ולכן הוספתו לא משנה שום דבר במסך.
+
+## החיבור מ-Make
+
+ב-Make נוצר חיבור Airtable מסוג OAuth בשם "ByteBlisk Airtable OAuth connection", עם גישה לשני הבסיסים. החיבור נוצר בהתחברות של בעל החשבון, ואין מפתח או טוקן בריפו.
+
+</div>
